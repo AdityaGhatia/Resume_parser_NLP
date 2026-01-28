@@ -2,18 +2,12 @@ import re
 import spacy
 from spacy.pipeline import EntityRuler
 
-# --------------------------------------------------
-# SECTION HEADERS
-# --------------------------------------------------
 SECTION_HEADERS = {
     "skills": r"(skills|technical skills|core skills|tools)",
     "education": r"(education|academic background|qualifications)",
     "experience": r"(experience|work experience|internships|internship)"
 }
 
-# --------------------------------------------------
-# NORMALIZATION MAP
-# --------------------------------------------------
 NORMALIZATION_MAP = {
     "ml": "machine learning",
     "dl": "deep learning",
@@ -22,9 +16,6 @@ NORMALIZATION_MAP = {
     "b. tech": "b.tech"
 }
 
-# --------------------------------------------------
-# LOAD NLP + ENTITY RULER (ONCE)
-# --------------------------------------------------
 def load_nlp():
     nlp = spacy.load("en_core_web_sm")
 
@@ -34,7 +25,6 @@ def load_nlp():
         ruler = nlp.get_pipe("entity_ruler")
 
     patterns = [
-        # -------- SKILLS --------
         {"label": "SKILL", "pattern": [{"LOWER": "python"}]},
         {"label": "SKILL", "pattern": [{"LOWER": "kafka"}]},
         {"label": "SKILL", "pattern": [{"LOWER": "spark"}]},
@@ -42,52 +32,35 @@ def load_nlp():
         {"label": "SKILL", "pattern": [{"LOWER": "machine"}, {"LOWER": "learning"}]},
         {"label": "SKILL", "pattern": [{"LOWER": "deep"}, {"LOWER": "learning"}]},
 
-        # -------- DEGREES --------
         {"label": "DEGREE", "pattern": [{"LOWER": "b"}, {"LOWER": "."}, {"LOWER": "tech"}]},
         {"label": "DEGREE", "pattern": [{"LOWER": "b"}, {"LOWER": "tech"}]},
         {"label": "DEGREE", "pattern": [{"LOWER": "bachelor"}, {"LOWER": "of"}, {"LOWER": "technology"}]},
         {"label": "DEGREE", "pattern": [{"LOWER": "computer"}, {"LOWER": "engineering"}]},
         {"label": "DEGREE", "pattern": [{"LOWER": "computer"}, {"LOWER": "science"}]},
 
-        # -------- JOB / EXPERIENCE --------
         {"label": "JOB_TITLE", "pattern": [{"LOWER": "mlops"}, {"LOWER": "engineer"}]},
         {"label": "JOB_TITLE", "pattern": [{"LOWER": "data"}, {"LOWER": "scientist"}]},
         {"label": "JOB_TITLE", "pattern": [{"LOWER": "data"}, {"LOWER": "analyst"}]},
         {"label": "JOB_TITLE", "pattern": [{"LOWER": "internship"}]},
         {"label": "JOB_TITLE", "pattern": [{"LOWER": "intern"}]},
 
-        # -------- COMPANY --------
         {"label": "COMPANY", "pattern": [{"LOWER": "accenture"}]},
     ]
-
     ruler.add_patterns(patterns)
     return nlp
 
-
-# Load NLP globally
 NLP = load_nlp()
 
-# --------------------------------------------------
-# SECTION EXTRACTION
-# --------------------------------------------------
 def extract_section(text, section):
     header = SECTION_HEADERS[section]
     regex = rf"{header}(.+?)(?=\n[A-Z][A-Z\s]{{2,}}|\Z)"
     match = re.search(regex, text, re.IGNORECASE | re.DOTALL)
     return match.group(0) if match else ""
 
-
-# --------------------------------------------------
-# ENTITY EXTRACTION
-# --------------------------------------------------
 def extract_entities(text, label):
     doc = NLP(text)
     return list(set(ent.text.lower().strip() for ent in doc.ents if ent.label_ == label))
 
-
-# --------------------------------------------------
-# SKILL LIST FALLBACK
-# --------------------------------------------------
 def skill_list_fallback(text, skills_file="data/skills_list.txt"):
     found = set()
     text_lower = text.lower()
@@ -100,10 +73,6 @@ def skill_list_fallback(text, skills_file="data/skills_list.txt"):
 
     return list(found)
 
-
-# --------------------------------------------------
-# EDUCATION FALLBACK
-# --------------------------------------------------
 EDUCATION_REGEX = [
     r"b\.?\s*tech",
     r"bachelor\s+of\s+technology",
@@ -123,10 +92,6 @@ def education_fallback(text):
 
     return list(found)
 
-
-# --------------------------------------------------
-# EXPERIENCE + COMPANY FALLBACK
-# --------------------------------------------------
 def experience_fallback(text):
     found = set()
     text_lower = text.lower()
@@ -141,10 +106,6 @@ def experience_fallback(text):
 
     return list(found)
 
-
-# --------------------------------------------------
-# NORMALIZATION
-# --------------------------------------------------
 def normalize(items):
     normalized = set()
     for item in items:
@@ -152,10 +113,6 @@ def normalize(items):
         normalized.add(NORMALIZATION_MAP.get(key, key))
     return list(normalized)
 
-
-# --------------------------------------------------
-# CONFIDENCE SCORING
-# --------------------------------------------------
 def confidence_score(section_found, count):
     if section_found and count >= 2:
         return 0.9
@@ -163,28 +120,21 @@ def confidence_score(section_found, count):
         return 0.7
     return 0.4
 
-
-# --------------------------------------------------
-# MAIN EXTRACTION PIPELINE
-# --------------------------------------------------
 def extract_all(text):
     skills_section = extract_section(text, "skills")
     edu_section = extract_section(text, "education")
     exp_section = extract_section(text, "experience")
 
-    # -------- SKILLS --------
     skills = extract_entities(skills_section or text, "SKILL")
     if len(skills) < 5:
         skills += skill_list_fallback(skills_section or text)
     skills = normalize(skills)
 
-    # -------- EDUCATION --------
     education = extract_entities(edu_section or text, "DEGREE")
     if not education:
         education = education_fallback(edu_section or text)
     education = normalize(education)
 
-    # -------- EXPERIENCE + COMPANY --------
     experience = extract_entities(exp_section or text, "JOB_TITLE")
     companies = extract_entities(exp_section or text, "COMPANY")
 

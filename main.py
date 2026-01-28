@@ -1,6 +1,5 @@
 import json
 import os
-
 from utils.pdf_reader import extract_text_from_pdf
 from utils.text_cleaner import clean_text
 from utils.extractors import extract_all
