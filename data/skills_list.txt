@@ -1,0 +1,20 @@
+python
+sql
+java
+cassandra
+sqlite3
+spark
+hadoop
+kafka
+airflow
+docker
+git
+github
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+tableau
+google cloud
+aws

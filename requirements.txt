@@ -1,0 +1,4 @@
+spacy
+nltk
+PyPDF2
+regex

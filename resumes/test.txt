@@ -1,0 +1,9 @@
+SKILLS
+Python, Kafka, Spark
+
+EDUCATION
+Bachelor of Technology in Computer Science
+
+EXPERIENCE
+Worked as MLOps Engineer at ABC
+2 years of experience in data engineering
